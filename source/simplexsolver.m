@@ -8,10 +8,7 @@ function [x] = simplexsolver(c,A,b,par)
 % initial dummy feasible point
 x_ind = init_feasible_point(A,par);
 % split the problem into basic(non-activ) and non-basic(activ) sets
-B = extract_element(A,x_ind,par); % the basic matrix B
-cb = extract_element(c,x_ind,par);
-cn = extract_element(c,x_ind==0, par);
-N = extract_element(A,x_ind==0, par);
+[B, N, cb, cn] = split_sets(A,c,x_ind,par);
 
 % calculate the initial feasible point
 xb = B\b; % check => xb should be non-negative
@@ -24,7 +21,8 @@ while par.itr >= i
     if isempty(enter_ind)
         % assemble solution according to xb, its position x_ind and xn = 0
         x = assemble_sol(xb,x_ind); 
-        disp('optimal solution found!')
+        sprintf('optimal solution found at the %d-th iteration',i)
+        disp(x)
         return
     else
         % select the entering index column in matrix A
@@ -32,35 +30,38 @@ while par.itr >= i
         % compute t
         t = B\Aq;
 
-        if t <= 0 % unbounded problem
+        if sum(t < 0)~=0 % unbounded problem
             % assemble solution according to xb, its position x_ind and xn = 0
             x = assemble_sol(xb,x_ind); 
-            disp('the problem is unbounded!')
+            sprintf('the problem is unbounded. The fact is found at the %d-th iteration',i)
             return
         else % update feasible point
-
-            [xq,q_ind] = min(xb./(t+eps));
+            ratio = round((xb./(t+eps)).*1e6) ./ 1e6; % numerical stable
+            [xq,q_ind_B] = min(ratio); % determine which element in basic set will be driven to zero at first
+            p = findindx(x_ind,q_ind_B,'target_num',1); % p the index of the basic var for which this minimum is achieved
+                                                  % => will be removed from the basic set
             % update feasible point
             xb = xb - t*xq;
             xn = zeros(n-m,1);
             xn(enter_ind) = xq;
-            par.xn = xn; 
+            % update the current feasible point
             x = assemble_sol(xb,x_ind,'xn',xn); 
-            x(x<1e-6) = 0;
-            [row,~,xb] = find(x);
-            x_ind = zeros(n,1);
-            x_ind(row) = 1;
+            x(x<1e-6) = 0; % numerical stable
+            % update the index of basic set
+            x_ind(p) = 0; 
+            q = findindx(x_ind,enter_ind,'target_num',0); % p the index of the non-basic var for which is select to enter
+                                                    %  => will be added to the basic set
+            x_ind(q) = 1;
+            % update the solution of basic set
+            xb = x(x_ind==1);
         end
         % update basic, nonbasic sets
-        B = extract_element(A,x_ind,par); % the basic matrix B
-        cb = extract_element(c,x_ind,par);
-        cn = extract_element(c,x_ind==0, par);
-        N = extract_element(A,x_ind==0, par);
+        [B, N, cb, cn] = split_sets(A,c,x_ind,par);
     end
+    i = i + 1;
 end
 
-% assemble solution according to xb, its position x_ind and xn = 0
-x = assemble_sol(xb,x_ind,par); 
-sprintf('optimal solution not found within %d iterationdts!',par.itr);
-return
+sprintf('optimal solution not found within %d iterations!',par.itr);
+disp('current feasible point is:')
+disp(x)
 end
