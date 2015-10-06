@@ -1,21 +1,22 @@
 function  x = assemble_sol(xb,x_ind,varargin)
 % assemble solution using xb, its position index x_ind and xn
-[m,n] = size(x_ind); 
+n = length(x_ind); 
+m = sum(x_ind);
 %% Input parser
 P = inputParser;
 
-% Liste der optionalen Parameter
-P.addOptional('par.xn', zeros(n-m,1), @isnumeric) 
+% List of the optional parameters
+P.addOptional('xn', zeros(n-m,1), @isnumeric);
 
-% Lese den Input
+% read out the Inputs
 P.parse(varargin{:});
 
-% Extrahiere die Variablen aus dem Input-Parser
+% Extract the variabls from the Input-Parser
 xn = P.Results.xn;
 
 %%
-xb = zeropadding(xb,x_ind,par);
-xn = zeropadding(xn,x_ind==0,par);
+xb = zeropadding(xb,x_ind);
+xn = zeropadding(xn,x_ind==0);
 
 x = xb + xn; 
 

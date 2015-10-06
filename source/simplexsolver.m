@@ -4,6 +4,7 @@ function [x] = simplexsolver(c,A,b,par)
 % min c'*x s.t. A*x=b, x>=0
 
 %% 
+[m,n] = size(A);
 % initial dummy feasible point
 x_ind = init_feasible_point(A,par);
 % split the problem into basic(non-activ) and non-basic(activ) sets
@@ -13,41 +14,42 @@ cn = extract_element(c,x_ind==0, par);
 N = extract_element(A,x_ind==0, par);
 
 % calculate the initial feasible point
-xb = b/B; % check => xb should be non-negative
+xb = B\b; % check => xb should be non-negative
 i = 0; % number of iterations
 while par.itr >= i
     % compute pii and sn
-    pii = cb/B';
+    pii = B'\cb;
     sn = cn - N'*pii;
     enter_ind = find(sn < 0, 1,'first');
     if isempty(enter_ind)
         % assemble solution according to xb, its position x_ind and xn = 0
-        x = assemble_sol(xb,x_ind,par); 
+        x = assemble_sol(xb,x_ind); 
         disp('optimal solution found!')
         return
     else
         % select the entering index column in matrix A
         Aq = N(:,enter_ind);
         % compute t
-        t = Aq/B;
+        t = B\Aq;
 
         if t <= 0 % unbounded problem
             % assemble solution according to xb, its position x_ind and xn = 0
-            x = assemble_sol(xb,x_ind,par); 
+            x = assemble_sol(xb,x_ind); 
             disp('the problem is unbounded!')
             return
         else % update feasible point
-            t_reg = t;
-            t_reg(t==0) = inf;
 
-            [xq,q_ind] = min(xb./t_reg);
+            [xq,q_ind] = min(xb./(t+eps));
             % update feasible point
             xb = xb - t*xq;
             xn = zeros(n-m,1);
             xn(enter_ind) = xq;
             par.xn = xn; 
-            x = assemble_sol(xb,x_ind,par); 
-            [xb, x_ind] = find(x ~= 0);
+            x = assemble_sol(xb,x_ind,'xn',xn); 
+            x(x<1e-6) = 0;
+            [row,~,xb] = find(x);
+            x_ind = zeros(n,1);
+            x_ind(row) = 1;
         end
         % update basic, nonbasic sets
         B = extract_element(A,x_ind,par); % the basic matrix B
