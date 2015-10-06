@@ -1,0 +1,9 @@
+# ignore Editor Temp Files
+*~
+# compiler generated Files
+*.out
+# local folder
+local
+data
+fig
+*.mat
