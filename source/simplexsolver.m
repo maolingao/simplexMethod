@@ -21,7 +21,7 @@ while par.itr >= i
     if isempty(enter_ind)
         % assemble solution according to xb, its position x_ind and xn = 0
         x = assemble_sol(xb,x_ind); 
-        sprintf('optimal solution found at the %d-th iteration',i)
+        sprintf('optimal solution found at the %d-th iteration.',i)
         disp(x)
         return
     else
@@ -33,11 +33,12 @@ while par.itr >= i
         if sum(t < 0)~=0 % unbounded problem
             % assemble solution according to xb, its position x_ind and xn = 0
             x = assemble_sol(xb,x_ind); 
-            sprintf('the problem is unbounded. The fact is found at the %d-th iteration',i)
+            sprintf('the problem is unbounded. The fact is found at the %d-th iteration.',i)
             return
         else % update feasible point
             ratio = round((xb./(t+eps)).*1e6) ./ 1e6; % numerical stable
             [xq,q_ind_B] = min(ratio); % determine which element in basic set will be driven to zero at first
+            q_ind_B = find(ratio==xq); q_ind_B = q_ind_B(end);
             p = findindx(x_ind,q_ind_B,'target_num',1); % p the index of the basic var for which this minimum is achieved
                                                   % => will be removed from the basic set
             % update feasible point
