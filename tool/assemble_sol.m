@@ -20,6 +20,6 @@ xn = zeropadding(xn,x_ind==0);
 
 x = xb + xn; 
 
-x(x<1e-6) = 0; % numerical stable
+x(x<1e-6) = 0;
 
 end

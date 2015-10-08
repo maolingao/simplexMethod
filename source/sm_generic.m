@@ -35,7 +35,7 @@ else
 
     if sum(t < 0) == length(t) % unbounded problem
         sprintf('the problem is unbounded. The fact is found at the %d-th iteration.',itr)
-    t = nan; xq = nan; leave_ind_candi = nan;
+        t = nan; xq = nan; leave_ind_candi = nan;
         return
     else % update feasible point
         t_pos = clip(t,0,inf); % only pick out the positive entries in t

@@ -22,18 +22,25 @@ while par.itr >= i
         return
         
     else % keep searching
+        % selection of leaving index
+        if length(leave_ind_candi) ~= 1
+            [t,xq,enter_ind,leave_ind] = select_leaving_ind(cb,cn,B,N,b);
+            i = i + 1;
+            if isnan(leave_ind)
+                x = nan;
+                disp('degeneracy occurs! no solution found.')
+                return
+            end
+        else
+            leave_ind = leave_ind_candi;
+        end
+        
         % update feasible point
         xb = xb - t*xq;
         xn = zeros(n-m,1);
         xn(enter_ind) = xq;
         % assemble complete solution
         x = assemble_sol(xb,x_ind,'xn',xn); 
-        % selection of leaving index
-        if length(leave_ind_candi) ~= 1
-            leave_ind = select_leaving_ind(B,leave_ind_candi);
-        else
-            leave_ind = leave_ind_candi;
-        end
         % update basic set
         p = findindx(x_ind,leave_ind,'target_num',1); % p the index of the basic var for which this minimum is achieved
                                               % => will be removed from the basic set
@@ -51,7 +58,7 @@ while par.itr >= i
     end
 end
 
-sprintf('optimal solution not found within %d iterations => possibly cycling!',par.itr)
+sprintf('optimal solution not found within %d iterations => possibly cycling!', i)
 disp('the current feasible point is:')
 disp(x)
 end
