@@ -30,13 +30,14 @@ while par.itr >= i
         % compute t
         t = B\Aq;
 
-        if sum(t < 0)~=0 % unbounded problem
+        if sum(t < 0) == length(t) % unbounded problem
             % assemble solution according to xb, its position x_ind and xn = 0
             x = assemble_sol(xb,x_ind); 
             sprintf('the problem is unbounded. The fact is found at the %d-th iteration.',i)
             return
         else % update feasible point
-            ratio = round((xb./(t+eps)).*1e6) ./ 1e6; % numerical stable
+            t_pos = clip(t,0,inf); % only pick out the positive entries in t
+            ratio = round((xb./(t_pos+eps)).*1e6) ./ 1e6; % numerical stable
             [xq,q_ind_B] = min(ratio); % determine which element in basic set will be driven to zero at first
             q_ind_B = find(ratio==xq); q_ind_B = q_ind_B(end);
             p = findindx(x_ind,q_ind_B,'target_num',1); % p the index of the basic var for which this minimum is achieved
@@ -55,6 +56,9 @@ while par.itr >= i
             x_ind(q) = 1;
             % update the solution of basic set
             xb = x(x_ind==1);
+            disp('basic set index:')
+            disp(x_ind')
+%             pause
         end
         % update basic, nonbasic sets
         [B, N, cb, cn] = split_sets(A,c,x_ind,par);
@@ -62,7 +66,7 @@ while par.itr >= i
     i = i + 1;
 end
 
-sprintf('optimal solution not found within %d iterations!',par.itr);
+sprintf('optimal solution not found within %d iterations => possibly cycling!',par.itr)
 disp('current feasible point is:')
 disp(x)
 end
