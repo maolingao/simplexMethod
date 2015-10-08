@@ -20,7 +20,9 @@ while par.itr >= i
     if isempty(enter_ind) % optimality
         disp('the optimal solutioin is:'); disp(x);
         return
-        
+    elseif isnan(t)
+        disp('simplex method stops with the current solution:'); disp(x);
+        return        
     else % keep searching
         % selection of leaving index
         if length(leave_ind_candi) ~= 1
