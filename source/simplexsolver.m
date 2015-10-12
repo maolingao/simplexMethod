@@ -1,23 +1,46 @@
-function [x] = simplexsolver(c,A,b,par)
+function [x,x_ind] = simplexsolver(c,A,b,par,varargin)
 % simplex method solver for constrained optimization in linear programming
 % standard form of lp
 % min c'*x s.t. A*x=b, x>=0
 
-%% initialization
-[m,n] = size(A);
+%% Input parser
+P = inputParser;
+
+% List of the optional parameters
 % initial dummy basic set
-x_ind = init_feasible_point(A,par);
-% split the problem into basic(non-activ) and non-basic(activ) sets
-[B, N, cb, cn] = split_sets(A,c,x_ind,par);
+P.addOptional('x_ind', init_feasible_point(A,par), @isnumeric);
 % calculate the initial feasible point
-xb = B\b; % check => xb should be non-negative
+P.addOptional('xb', nan, @isnumeric);
+
+% read out the Inputs
+P.parse(varargin{:});
+
+% Extract the variabls from the Input-Parser
+x_ind = P.Results.x_ind;
+xb = P.Results.xb;
+
+%% initialization
+[B, N, cb, cn] = split_sets(A,c,x_ind,par);
+
+if isnan(xb)
+    % split the problem into basic(non-activ) and non-basic(activ) sets
+    xb = B\b;
+end
+% check => xb should be non-negative
+assert(sum(xb<0)==0,'malformed problem: initialization is NOT a basic feasible point.');
+
+[m,n] = size(A);
 i = 0; % number of iterations
+
 %% main loop
 while par.itr >= i
     
     [t,xq,enter_ind,leave_ind_candi] = sm_generic(cb,cn,B,N,b,'xb',xb,'itr',i);
     
     if isempty(enter_ind) % optimality
+        % assemble complete solution
+        xn = zeros(n-m,1);
+        x = assemble_sol(xb,x_ind,'xn',xn); 
         disp('the optimal solutioin is:'); disp(x);
         return
     elseif isnan(t)
